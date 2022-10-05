@@ -1,7 +1,7 @@
 from django.db import models
 from django.urls import reverse
-
-
+from django.contrib.auth.models import AbstractUser
+from .validators import phone_validator
 class Category(models.Model):
     name = models.CharField('Категория', max_length=70, db_index=True)
     url = models.SlugField(max_length=170, unique=True)
@@ -12,6 +12,12 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
+
+class User(AbstractUser):
+    phone = models.CharField('телефон', validators=[phone_validator], max_length=13, unique=True)
+
+    def __str__(self):
+        return self.username
 
 
 class Product(models.Model):
@@ -24,6 +30,8 @@ class Product(models.Model):
     url = models.SlugField(max_length=170, unique=True)
     quantity = models.PositiveIntegerField('Колличество', default=1)
     is_active = models.BooleanField('Активность', default=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='Пользователь',
+                                 related_name="user_product", default=1)
 
     def __str__(self):
         return self.name
@@ -70,9 +78,9 @@ class StarForProduct(models.Model):
         verbose_name_plural = 'Звезды за продукт'
 
 
-class Reviews(models.Model):
-    email = models.EmailField(default='a@mail.tu')
-    name = models.CharField("Имя", max_length=100, default='a')
+class Review(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='Пользователь',
+                             related_name="user_rewiev", default=1)
     description = models.TextField('Отзыв')
     created = models.DateTimeField('Дата создания', auto_now_add=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='Продукт',

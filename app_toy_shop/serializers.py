@@ -1,13 +1,15 @@
 from rest_framework import serializers
 
-from .models import Product, Reviews, StarForProduct, Category
+from .models import Product, Review, StarForProduct, Category
 
 
 class CreateReviewSerializers(serializers.ModelSerializer):
     '''Отзывы одного продукта'''
 
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
     class Meta:
-        model = Reviews
+        model = Review
         fields = '__all__'
 
 
@@ -15,8 +17,8 @@ class ReviewSerializers(serializers.ModelSerializer):
     '''Детали отзыва одного продукта'''
 
     class Meta:
-        model = Reviews
-        fields = ('email', 'name', 'description', 'created')
+        model = Review
+        fields = ('user', 'description', 'created')
 
 
 class CategorySerializers(serializers.ModelSerializer):

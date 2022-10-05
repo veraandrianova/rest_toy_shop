@@ -5,15 +5,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Product, Reviews, Category
+from .models import Product, Review, Category
+from .permissions import IsOwnerOrReadOnly, IsAdminOrReadOnly
 from .serializers import ProductListSerializers, ProductDetailSerializers, CreateReviewSerializers, \
     CreateRatingSerializer, CategorySerializers
-from .service import get_client_ip
+from .service import get_client_ip, PaginatorProduct
 
 
 # Create your views here.
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+    '''Вывод продуктов'''
     filter_backends = (DjangoFilterBackend,)
+    permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
+    pagination_class = PaginatorProduct
+    # filterset_class = ProductFilter
 
     def get_queryset(self):
         products = Product.objects.filter(is_active=True).annotate(
@@ -62,8 +67,9 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
 
 class CreateReview(viewsets.ModelViewSet):
     '''Добавление отзыва'''
-    queryset = Reviews.objects.all()
+    queryset = Review.objects.all()
     serializer_class = CreateReviewSerializers
+    permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
 
     # def post(self, request):
     #     review = CreateReviewSerializers(data=request.data)
@@ -100,8 +106,15 @@ class AddStarRatingProduct(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(ip=get_client_ip(self.request))
 
-class Category(generics.ListAPIView):
+class CategoryView(generics.ListAPIView):
     '''Категории'''
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializers
+
+class CategoryDetailView(generics.RetrieveAPIView):
+    '''Детали одной категории'''
+
+    queryset = Category.objects.filter()
+    serializer_class = CategorySerializers
+

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from .models import Category, Product, Image, Star, StarForProduct, Reviews
+from .models import Category, Product, Image, Star, StarForProduct, Review
 
 
 class CategoryAdmin(admin.ModelAdmin):
@@ -10,7 +10,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 class ReviewInline(admin.TabularInline):
-    model = Reviews
+    model = Review
     extra = 1
 
 
@@ -69,6 +69,6 @@ admin.site.register(Product, ProductAdmin)
 admin.site.register(Image, ImageAdmin)
 admin.site.register(Star, StarAdmin)
 admin.site.register(StarForProduct, StarForProductAdmin)
-admin.site.register(Reviews, ReviewsAdmin)
+admin.site.register(Review, ReviewsAdmin)
 
 # Register your models here.

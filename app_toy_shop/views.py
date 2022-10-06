@@ -1,6 +1,7 @@
 from django.db import models
 from django.shortcuts import render
 from rest_framework import generics, viewsets
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
@@ -9,7 +10,7 @@ from .models import Product, Review, Category
 from .permissions import IsOwnerOrReadOnly, IsAdminOrReadOnly
 from .serializers import ProductListSerializers, ProductDetailSerializers, CreateReviewSerializers, \
     CreateRatingSerializer, CategorySerializers
-from .service import get_client_ip, PaginatorProduct
+from .service import get_client_ip, PaginatorProduct, ProductFilter
 
 
 # Create your views here.
@@ -18,7 +19,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
     pagination_class = PaginatorProduct
-    # filterset_class = ProductFilter
+    filterset_class = ProductFilter
 
     def get_queryset(self):
         products = Product.objects.filter(is_active=True).annotate(
@@ -69,7 +70,7 @@ class CreateReview(viewsets.ModelViewSet):
     '''Добавление отзыва'''
     queryset = Review.objects.all()
     serializer_class = CreateReviewSerializers
-    permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
+    permission_classes = (IsAuthenticated, )
 
     # def post(self, request):
     #     review = CreateReviewSerializers(data=request.data)

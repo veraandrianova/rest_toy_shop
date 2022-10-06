@@ -2,6 +2,9 @@ from django_filters import rest_framework as filters
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
+from rest_toy_shop.app_toy_shop.models import Product
+
+
 # from rest_toy_shop.app_toy_shop.models import Product
 
 class PaginatorProduct(PageNumberPagination):
@@ -29,14 +32,14 @@ def get_client_ip(request):
         ip = request.META.get('REMOTE_ADDR')
     return ip
 
-# class CharFilterInFilter(filters.BaseInFilter, filters.CharFilter):
-#     pass
-#
-#
-# class ProductFilter(filters.FilterSet):
-#     price = filters.RangeFilter()
-#     category = CharFilterInFilter(field_name='category__name', lookup_expr='in')
-#
-#     class Meta:
-#         model = Product
-#         fields = ['category', 'price']
+class CharFilterInFilter(filters.BaseInFilter, filters.CharFilter):
+    pass
+
+
+class ProductFilter(filters.FilterSet):
+    price = filters.RangeFilter()
+    category = CharFilterInFilter(field_name='category__name', lookup_expr='in')
+
+    class Meta:
+        model = Product
+        fields = ['category', 'price']

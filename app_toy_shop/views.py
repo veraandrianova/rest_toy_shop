@@ -70,13 +70,8 @@ class CreateReview(viewsets.ModelViewSet):
     '''Добавление отзыва'''
     queryset = Review.objects.all()
     serializer_class = CreateReviewSerializers
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
 
-    # def post(self, request):
-    #     review = CreateReviewSerializers(data=request.data)
-    #     if review.is_valid():
-    #         review.save()
-    #     return Response(status=200)
 
 
 # class AddStarRatingProduct(APIView):

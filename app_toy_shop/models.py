@@ -14,7 +14,6 @@ class Category(models.Model):
         verbose_name_plural = 'Категории'
 
 class User(AbstractUser):
-    phone = models.CharField('телефон', validators=[phone_validator], max_length=13, unique=True, blank=True, null=True)
 
     def __str__(self):
         return self.username

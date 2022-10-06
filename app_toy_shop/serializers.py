@@ -51,6 +51,16 @@ class ProductDetailSerializers(serializers.ModelSerializer):
         exclude = ('is_active',)
 
 
+class ProductCreateSerializers(serializers.ModelSerializer):
+    '''Создание продукта'''
+
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Product
+        fields = ('name', 'description', 'price', 'poster', 'category', 'quantity', 'user')
+
+
 class CreateRatingSerializer(serializers.ModelSerializer):
     '''Добавление рейтинга'''
 

@@ -1,23 +1,24 @@
 from django.db import models
 from django.shortcuts import render
-from rest_framework import generics, viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import generics, viewsets, status
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Product, Review, Category
-from .permissions import IsOwnerOrReadOnly, IsAdminOrReadOnly
+from .permissions import IsOwnerOrReadOnly, IsAdminOrReadOnly, IsAuthOrReadOnly
 from .serializers import ProductListSerializers, ProductDetailSerializers, CreateReviewSerializers, \
-    CreateRatingSerializer, CategorySerializers
-from .service import get_client_ip, PaginatorProduct, ProductFilter
+    CreateRatingSerializer, CategorySerializers, ProductCreateSerializers
+from .service import get_client_ip, PaginatorProduct, ProductFilter, get_url
 
 
 # Create your views here.
-class ProductViewSet(viewsets.ReadOnlyModelViewSet):
-    '''Вывод продуктов'''
+class ProductsViewSet(viewsets.ModelViewSet):
+    '''Вывод всех продуктов'''
     filter_backends = (DjangoFilterBackend,)
-    permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
+    serializer_class = ProductListSerializers
+    permission_classes = (IsAuthenticatedOrReadOnly, )
     pagination_class = PaginatorProduct
     filterset_class = ProductFilter
 
@@ -29,12 +30,31 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         )
         return products
 
+    def perform_create(self, serializer):
+        serializer.save(url=get_url(self.request))
+
     def get_serializer_class(self):
         if self.action == 'list':
             return ProductListSerializers
-        elif self.action == 'retrieve':
-            return ProductDetailSerializers
+        elif self.action == 'create':
+            return ProductCreateSerializers
 
+
+class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+    '''Вывод одного продуктов'''
+    filter_backends = (DjangoFilterBackend,)
+    serializer_class = ProductDetailSerializers
+    permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
+    pagination_class = PaginatorProduct
+    filterset_class = ProductFilter
+
+    def get_queryset(self):
+        products = Product.objects.filter(is_active=True).annotate(
+            rating_user=models.Count('product_star', filter=models.Q(product_star__ip=get_client_ip(self.request)))
+        ).annotate(
+            middle_star=models.Sum(models.F('product_star__star')) / models.Count(models.F('product_star'))
+        )
+        return products
 
 # class ProductListView(generics.ListAPIView):
 #     '''Вывод всех продуктов'''
@@ -70,9 +90,13 @@ class CreateReview(viewsets.ModelViewSet):
     '''Добавление отзыва'''
     queryset = Review.objects.all()
     serializer_class = CreateReviewSerializers
+    permission_classes = (IsAuthenticatedOrReadOnly, )
+
+class ShowReview(viewsets.ModelViewSet):
+    '''Просмотр отзыва'''
+    queryset = Review.objects.all()
+    serializer_class = CreateReviewSerializers
     permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
-
-
 
 # class AddStarRatingProduct(APIView):
 #     '''Добавление звезд рейтинга'''

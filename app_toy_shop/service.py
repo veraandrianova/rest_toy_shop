@@ -1,8 +1,8 @@
 from django_filters import rest_framework as filters
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from transliterate import translit
 
-# from rest_toy_shop.app_toy_shop.models import Product
 
 
 from .models import Product
@@ -31,6 +31,13 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+def get_url(request):
+    '''Получение url продукта'''
+
+    cur_url = request.data.get('name').lower().replace(' ', '_')
+    url = translit(cur_url, language_code='ru', reversed=True)
+    return url
 
 class CharFilterInFilter(filters.BaseInFilter, filters.CharFilter):
     pass

@@ -40,10 +40,10 @@ class ProductsViewSet(viewsets.ModelViewSet):
             return ProductCreateSerializers
 
 
-class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+class ProductViewSet(viewsets.ModelViewSet):
     '''Вывод одного продуктов'''
     filter_backends = (DjangoFilterBackend,)
-    serializer_class = ProductDetailSerializers
+    serializer_class = ProductCreateSerializers
     permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
     pagination_class = PaginatorProduct
     filterset_class = ProductFilter
@@ -55,6 +55,15 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             middle_star=models.Sum(models.F('product_star__star')) / models.Count(models.F('product_star'))
         )
         return products
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return ProductDetailSerializers
+        elif self.action == 'update' or self.action == 'destroy':
+            return ProductCreateSerializers
+
+    def perform_update(self, serializer):
+        serializer.save(url=get_url(self.request))
 
 # class ProductListView(generics.ListAPIView):
 #     '''Вывод всех продуктов'''

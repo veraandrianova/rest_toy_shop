@@ -1,6 +1,6 @@
 from django.db import models
 from django.urls import reverse
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, User
 from .validators import phone_validator
 class Category(models.Model):
     name = models.CharField('Категория', max_length=70, db_index=True)

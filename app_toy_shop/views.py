@@ -17,10 +17,19 @@ from .service import get_client_ip, PaginatorProduct, ProductFilter, get_url
 class ProductsViewSet(viewsets.ModelViewSet):
     '''Вывод всех продуктов'''
     filter_backends = (DjangoFilterBackend,)
-    serializer_class = ProductListSerializers
-    permission_classes = (IsAuthenticatedOrReadOnly, )
+    # serializer_class = ProductListSerializers
+    permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
     pagination_class = PaginatorProduct
     filterset_class = ProductFilter
+    permission_classes_by_action = {'list': [IsAuthenticatedOrReadOnly],
+                                    'retrieve': [IsAuthenticatedOrReadOnly]}
+    serializer_classes_by_action = {
+        'list': ProductListSerializers,
+        'update': ProductCreateSerializers,
+        'destroy': ProductCreateSerializers,
+        'create': ProductCreateSerializers,
+        'retrieve': ProductDetailSerializers
+    }
 
     def get_queryset(self):
         products = Product.objects.filter(is_active=True).annotate(
@@ -33,37 +42,52 @@ class ProductsViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(url=get_url(self.request))
 
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return ProductListSerializers
-        elif self.action == 'create':
-            return ProductCreateSerializers
-
-
-class ProductViewSet(viewsets.ModelViewSet):
-    '''Вывод одного продуктов'''
-    filter_backends = (DjangoFilterBackend,)
-    serializer_class = ProductCreateSerializers
-    permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
-    pagination_class = PaginatorProduct
-    filterset_class = ProductFilter
-
-    def get_queryset(self):
-        products = Product.objects.filter(is_active=True).annotate(
-            rating_user=models.Count('product_star', filter=models.Q(product_star__ip=get_client_ip(self.request)))
-        ).annotate(
-            middle_star=models.Sum(models.F('product_star__star')) / models.Count(models.F('product_star'))
-        )
-        return products
-
-    def get_serializer_class(self):
-        if self.action == 'retrieve':
-            return ProductDetailSerializers
-        elif self.action == 'update' or self.action == 'destroy':
-            return ProductCreateSerializers
-
     def perform_update(self, serializer):
         serializer.save(url=get_url(self.request))
+
+    # def get_serializer_class(self):
+    #     if self.action == 'list':
+    #         return ProductListSerializers
+    #     # elif self.action == 'update' or 'destroy' or 'create':
+    #     #     return ProductCreateSerializers
+    #     elif self.action == 'retrieve':
+    #         return ProductListSerializers
+
+    def get_serializer(self, *args, **kwargs):
+        try:
+            serializer_class = self.serializer_classes_by_action[self.action]
+        except KeyError:
+            serializer_class = self.get_serializer_class()
+        kwargs.setdefault('context', self.get_serializer_context())
+        return serializer_class(*args, **kwargs)
+
+
+
+# class ProductViewSet(viewsets.ModelViewSet):
+#     '''Вывод одного продуктов'''
+#     filter_backends = (DjangoFilterBackend,)
+#     serializer_class = ProductCreateSerializers
+#     permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
+#     pagination_class = PaginatorProduct
+#     filterset_class = ProductFilter
+#
+#     def get_queryset(self):
+#         products = Product.objects.filter(is_active=True).annotate(
+#             rating_user=models.Count('product_star', filter=models.Q(product_star__ip=get_client_ip(self.request)))
+#         ).annotate(
+#             middle_star=models.Sum(models.F('product_star__star')) / models.Count(models.F('product_star'))
+#         )
+#         return products
+#
+#     def get_serializer_class(self):
+#         if self.action == 'retrieve':
+#             return ProductDetailSerializers
+#         elif self.action == 'update' or self.action == 'destroy':
+#             return ProductCreateSerializers
+#
+#     def perform_update(self, serializer):
+#         serializer.save(url=get_url(self.request))
+
 
 # class ProductListView(generics.ListAPIView):
 #     '''Вывод всех продуктов'''
@@ -99,13 +123,14 @@ class CreateReview(viewsets.ModelViewSet):
     '''Добавление отзыва'''
     queryset = Review.objects.all()
     serializer_class = CreateReviewSerializers
-    permission_classes = (IsAuthenticatedOrReadOnly, )
 
-class ShowReview(viewsets.ModelViewSet):
-    '''Просмотр отзыва'''
-    queryset = Review.objects.all()
-    serializer_class = CreateReviewSerializers
-    permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
+    def get_permissions(self):
+        if self.action == 'list' or 'retrieve':
+            permission_classes = [IsAuthenticatedOrReadOnly]
+        else:
+            permission_classes = [IsOwnerOrReadOnly, IsAdminOrReadOnly]
+        return [permission() for permission in permission_classes]
+
 
 # class AddStarRatingProduct(APIView):
 #     '''Добавление звезд рейтинга'''
@@ -135,15 +160,16 @@ class AddStarRatingProduct(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(ip=get_client_ip(self.request))
 
-class CategoryView(generics.ListAPIView):
+
+class CategoryView(viewsets.ModelViewSet):
     '''Категории'''
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializers
 
-class CategoryDetailView(generics.RetrieveAPIView):
-    '''Детали одной категории'''
 
-    queryset = Category.objects.filter()
-    serializer_class = CategorySerializers
-
+# class CategoryDetailView(generics.RetrieveAPIView):
+#     '''Детали одной категории'''
+#
+#     queryset = Category.objects.filter()
+#     serializer_class = CategorySerializers

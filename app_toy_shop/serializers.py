@@ -68,7 +68,7 @@ class CreateRatingSerializer(serializers.ModelSerializer):
         model = StarForProduct
         fields = ('star', 'product')
 
-    def created(self, validated_data):
+    def create(self, validated_data):
         rating, _ = StarForProduct.update_or_create(
             ip=validated_data.get('ip', None),
             product=validated_data.get('product', None),

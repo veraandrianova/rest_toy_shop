@@ -17,7 +17,6 @@ from .service import get_client_ip, PaginatorProduct, ProductFilter, get_url
 class ProductsViewSet(viewsets.ModelViewSet):
     '''Вывод всех продуктов'''
     filter_backends = (DjangoFilterBackend,)
-    # serializer_class = ProductListSerializers
     permission_classes = (IsOwnerOrReadOnly, IsAdminOrReadOnly)
     pagination_class = PaginatorProduct
     filterset_class = ProductFilter
@@ -45,13 +44,6 @@ class ProductsViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(url=get_url(self.request))
 
-    # def get_serializer_class(self):
-    #     if self.action == 'list':
-    #         return ProductListSerializers
-    #     # elif self.action == 'update' or 'destroy' or 'create':
-    #     #     return ProductCreateSerializers
-    #     elif self.action == 'retrieve':
-    #         return ProductListSerializers
 
     def get_serializer(self, *args, **kwargs):
         try:
